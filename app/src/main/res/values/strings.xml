@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">FirebaseAndroid</string>
     <string name="action_settings">Settings</string>
+    <string name="list_dummy">
+        Having fixed Tabs is advisable only when you have limited number of Tabs.
+    Having fixed Tabs is advisable only when you have limited number of Tabs
+    Having fixed Tabs is advisable only when you have limited number of Tabs</string>
+    <string name="title_activity_add">AddActivity</string>
 </resources>
