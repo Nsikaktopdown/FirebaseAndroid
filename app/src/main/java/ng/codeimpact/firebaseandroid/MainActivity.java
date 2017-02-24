@@ -1,17 +1,21 @@
 package ng.codeimpact.firebaseandroid;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import com.firebase.ui.database.FirebaseListAdapter;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
@@ -29,11 +33,10 @@ public class MainActivity extends AppCompatActivity {
 
     // [define_database_reference]
     private DatabaseReference mDatabase;
-
     private FirebaseRecyclerAdapter<List_item, ListViewHolder> mAdapter;
     private RecyclerView mRecycler;
-    private LinearLayoutManager mManager;
-    FirebaseListAdapter<List> ad;
+    private ProgressBar progressBar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,12 +51,15 @@ public class MainActivity extends AppCompatActivity {
 
         mRecycler = (RecyclerView) findViewById(R.id.messages_list);
         int columnCount = getResources().getInteger(R.integer.list_column_count);
-
-       // queryData(mDatabase);
         StaggeredGridLayoutManager sglm =
                 new StaggeredGridLayoutManager(columnCount, StaggeredGridLayoutManager.VERTICAL);
-        mRecycler.setLayoutManager(sglm);
         mRecycler.setHasFixedSize(true);
+        mRecycler.setLayoutManager(sglm);
+
+        progressBar = (ProgressBar) findViewById(R.id.progress);
+        progressBar.setVisibility(View.VISIBLE);
+
+
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -66,9 +72,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        queryData(mDatabase);
 
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+    }
 
     public  void queryData(DatabaseReference mDatabase){
         // Set up FirebaseRecyclerAdapter with the Query
@@ -81,38 +92,24 @@ public class MainActivity extends AppCompatActivity {
 
                 // Set click listener for the whole post view
                 final String postKey = postRef.getKey();
-                viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                final String title = model.getTitle();
+                final String body = model.getBody();
+                viewHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
                     @Override
-                    public void onClick(View v) {
-                      /*  // Launch PostDetailActivity
-                        Intent intent = new Intent(getActivity(), PostDetailActivity.class);
-                        intent.putExtra(PostDetailActivity.EXTRA_POST_KEY, postKey);
-                        startActivity(intent);*/
+                    public boolean onLongClick(View view) {
+
+                        addOptionMenu(viewHolder.itemView, postKey, title,body);
+                        return false;
                     }
                 });
 
-              /*  // Determine if the current user has liked this post and set UI accordingly
-                if (model.stars.containsKey(getUid())) {
-                    viewHolder.starView.setImageResource(R.drawable.ic_toggle_star_24);
-                } else {
-                    viewHolder.starView.setImageResource(R.drawable.ic_toggle_star_outline_24);
-                }
 
-                // Bind Post to ViewHolder, setting OnClickListener for the star button
-                viewHolder.bindToPost(model, new View.OnClickListener() {
-                    @Override
-                    public void onClick(View starView) {
-                        // Need to write to both places the post is stored
-                        DatabaseReference globalPostRef = mDatabase.child("posts").child(postRef.getKey());
-                        DatabaseReference userPostRef = mDatabase.child("user-posts").child(model.uid).child(postRef.getKey());
+                viewHolder.titleView.setText(model.getTitle());
+                viewHolder.bodyView.setText(model.getBody());
 
-                        // Run two transactions
-                        onStarClicked(globalPostRef);
-                        onStarClicked(userPostRef);
-                    }
-                });*/
             }
         };
+        progressBar.setVisibility(View.GONE);
         mRecycler.setAdapter(mAdapter);
     }
     @Override
@@ -120,6 +117,42 @@ public class MainActivity extends AppCompatActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
+    }
+
+
+    public void addOptionMenu(View view , final String postkey, final String title, final String body){
+
+        final Context mCtx = view.getContext();
+        //creating a popup menu
+        PopupMenu popup = new PopupMenu(mCtx, view);
+        //inflating menu from xml resource
+        popup.inflate(R.menu.menu_option);
+        //adding click listener
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.update:
+                        //handle update click
+                        Intent intent = new Intent(getApplicationContext(), AddActivity.class);
+                        intent.putExtra("postkey",postkey);
+                        intent.putExtra("title", title);
+                        intent.putExtra("body", body);
+                        startActivity(intent);
+                        break;
+                    case R.id.delete:
+                        //handle delete click
+                        mDatabase.child("users-list").child(postkey).removeValue();
+                        Toast.makeText(mCtx, "list deleted", Toast.LENGTH_SHORT).show();
+                        break;
+
+                }
+                return false;
+            }
+        });
+        //displaying the popup
+        popup.show();
+
     }
 
     @Override
