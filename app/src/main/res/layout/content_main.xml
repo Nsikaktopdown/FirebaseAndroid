@@ -18,6 +18,11 @@
         android:padding="5dp"
         android:scrollbars="vertical"
         tools:listitem="@layout/item_list" />
+    <ProgressBar
+        android:id="@+id/progress"
+        android:layout_centerInParent="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 
 
 </RelativeLayout>
